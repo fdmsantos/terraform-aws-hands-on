@@ -1,2 +1,3 @@
-# studious-fortnight
-AWS Big Data Study with Terraform
+# Terraform AWS Hands ON
+
+
