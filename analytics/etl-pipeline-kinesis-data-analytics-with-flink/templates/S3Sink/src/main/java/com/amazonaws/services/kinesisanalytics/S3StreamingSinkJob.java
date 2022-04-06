@@ -12,31 +12,35 @@ import org.apache.flink.api.common.serialization.SimpleStringEncoder;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink;
 import org.apache.flink.util.Collector;
-
+import com.amazonaws.services.kinesisanalytics.runtime.KinesisAnalyticsRuntime;
+import java.util.Map;
 import java.util.Properties;
 import java.sql.Timestamp;
 import java.time.Instant;
+import static java.util.Optional.ofNullable;
+
+//import static software.amazon.kinesis.connectors.flink.config.AWSConfigConstants.AWS_REGION;
 
 public class S3StreamingSinkJob {
-    private static final String region = "${region}";
-    private static final String inputStreamName = "${inputStream}";
-    private static final String s3SinkPath = "s3a://${bucket}/data";
+    private static DataStream<String> createSourceFromStaticConfig(StreamExecutionEnvironment env) throws Exception {
 
-    private static DataStream<String> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
+        Map<String, Properties> applicationProperties = KinesisAnalyticsRuntime.getApplicationProperties();
+        Properties properties = ofNullable(applicationProperties.get("ENVIRONMENT")).orElseGet(Properties::new);
 
         Properties inputProperties = new Properties();
-        inputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
-        inputProperties.setProperty(ConsumerConfigConstants.STREAM_INITIAL_POSITION,
-                "LATEST");
-        return env.addSource(new FlinkKinesisConsumer<>(inputStreamName,
+        inputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, properties.getProperty("REGION", "eu-central-1"));
+        inputProperties.setProperty(ConsumerConfigConstants.STREAM_INITIAL_POSITION, "TRIM_HORIZON");
+        return env.addSource(new FlinkKinesisConsumer<>(properties.getProperty("INPUT_STREAM", "ExampleInptStream"),
                 new SimpleStringSchema(),
                 inputProperties));
     }
 
-    private static StreamingFileSink<String> createS3SinkFromStaticConfig() {
+    private static StreamingFileSink<String> createS3SinkFromStaticConfig() throws Exception {
+        Map<String, Properties> applicationProperties = KinesisAnalyticsRuntime.getApplicationProperties();
+        Properties properties = ofNullable(applicationProperties.get("ENVIRONMENT")).orElseGet(Properties::new);
 
         final StreamingFileSink<String> sink = StreamingFileSink
-                .forRowFormat(new Path(s3SinkPath), new SimpleStringEncoder<String>("UTF-8"))
+                .forRowFormat(new Path("s3a://" + properties.getProperty("BUCKET", "BucketExample") + "/data"), new SimpleStringEncoder<String>("UTF-8"))
                 .build();
         return sink;
     }

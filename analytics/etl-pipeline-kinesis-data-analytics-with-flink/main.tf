@@ -5,7 +5,7 @@ resource "aws_kinesis_stream" "this" {
 }
 
 resource "aws_iam_role" "this" {
-  name               = "${var.name_prefix}-analytics-role"
+  name = "${var.name_prefix}-analytics-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -26,7 +26,7 @@ resource "aws_iam_role" "this" {
       Statement = [
         {
           Sid = "ReadInputKinesis"
-          Action   = [
+          Action = [
             "kinesis:DescribeStream",
             "kinesis:GetShardIterator",
             "kinesis:GetRecords",
@@ -37,7 +37,7 @@ resource "aws_iam_role" "this" {
         },
         {
           Sid = "Logs"
-          Action   = [
+          Action = [
             "logs:*"
           ]
           Effect   = "Allow"
@@ -45,10 +45,10 @@ resource "aws_iam_role" "this" {
         },
         {
           Sid = "WriteObjects"
-          Action   = [
+          Action = [
             "s3:*"
           ]
-          Effect   = "Allow"
+          Effect = "Allow"
           Resource = [
             aws_s3_bucket.results.arn,
             "${aws_s3_bucket.results.arn}/*",
@@ -62,19 +62,32 @@ resource "aws_iam_role" "this" {
 }
 
 resource "aws_kinesisanalyticsv2_application" "this" {
-  name = "${var.name_prefix}-analytics"
+  depends_on             = [aws_s3_bucket_object.jar]
+  name                   = "${var.name_prefix}-analytics"
   runtime_environment    = "FLINK-1_11"
   service_execution_role = aws_iam_role.this.arn
+  start_application      = true
   application_configuration {
     application_code_configuration {
       code_content {
         s3_content_location {
           bucket_arn = aws_s3_bucket.code.arn
-          file_key = local.jar_target_file
+          file_key   = local.jar_target_file
         }
       }
 
       code_content_type = "ZIPFILE"
+    }
+
+    environment_properties {
+      property_group {
+        property_group_id = "ENVIRONMENT"
+        property_map = {
+          REGION       = data.aws_region.current.name
+          INPUT_STREAM = aws_kinesis_stream.this.name
+          BUCKET       = aws_s3_bucket.results.bucket
+        }
+      }
     }
 
     flink_application_configuration {
@@ -86,13 +99,6 @@ resource "aws_kinesisanalyticsv2_application" "this" {
         configuration_type = "CUSTOM"
         log_level          = "DEBUG"
         metrics_level      = "TASK"
-      }
-
-      parallelism_configuration {
-        auto_scaling_enabled = true
-        configuration_type   = "CUSTOM"
-        parallelism          = 10
-        parallelism_per_kpu  = 4
       }
     }
 
@@ -129,32 +135,23 @@ resource "aws_s3_bucket_public_access_block" "results_public_access_block" {
   restrict_public_buckets = true
 }
 
-data "template_file" "code" {
-  template = file("${path.module}/templates/S3Sink/src/main/java/com/amazonaws/services/kinesisanalytics/S3StreamingSinkJob.java")
-  vars = {
-    region = data.aws_region.current.name
-    inputStream = aws_kinesis_stream.this.name
-    bucket = aws_s3_bucket.results.bucket
-  }
-}
-
 resource "null_resource" "build_jar" {
   triggers = {
-    template = data.template_file.code.rendered
+    code = sha1(file("${path.module}/templates/S3Sink/src/main/java/com/amazonaws/services/kinesisanalytics/S3StreamingSinkJob.java"))
   }
 
   provisioner "local-exec" {
-    command = "mvn package -Dflink.version=1.11.1"
+    command     = "mvn package -Dflink.version=1.11.1"
     working_dir = "${path.module}/templates/S3Sink"
   }
 }
 
 resource "aws_s3_bucket_object" "jar" {
-  depends_on = [ null_resource.build_jar ]
-  bucket = aws_s3_bucket.code.bucket
-  key    = "aws-kinesis-analytics-java-apps-1.0.jar"
-  source = "${path.module}/templates/S3Sink/target/${local.jar_target_file}"
-  etag = filemd5("${path.module}/templates/S3Sink/target/${local.jar_target_file}")
+  depends_on = [null_resource.build_jar]
+  bucket     = aws_s3_bucket.code.bucket
+  key        = "aws-kinesis-analytics-java-apps-1.0.jar"
+  source     = "${path.module}/templates/S3Sink/target/${local.jar_target_file}"
+  etag       = filemd5("${path.module}/templates/S3Sink/target/${local.jar_target_file}")
 }
 
 

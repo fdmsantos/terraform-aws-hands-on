@@ -18,3 +18,31 @@ In this tutorial you will learn how to:
 * Create, configure, and launch a Kinesis Data Analytics application
 * Verify results
 * Clean up resources
+
+## Pre Requisites
+
+* Terraform
+* Maven
+
+### Terraform Variables
+
+It's necessary create tfvars file with the following variables
+
+* cognito_user
+* cognito_password
+
+## Resources Created
+
+* Kinesis Data Stream
+* Kinesis Data Analytics with Apache Flink Appliction
+* S3 Buckets
+* Cloudwatch Log Group
+* IAM Role
+* Cloudformation Stack
+  * Cognito User Pool
+  * IAM Roles
+  * Lambda
+
+## Further Work
+
+* Run Athena Query to create the Table from results s3 bucket through terraform
