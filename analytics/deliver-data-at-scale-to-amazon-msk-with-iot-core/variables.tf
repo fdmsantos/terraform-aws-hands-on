@@ -1,6 +1,6 @@
 variable "name_prefix" {
   type    = string
-  default = "warehouse-demo"
+  default = "kafka-demo"
 }
 
 variable "domain" {

@@ -22,8 +22,10 @@ Some code outside terraform was copied from another sources.
   * [README](analytics/etl-pipeline-kinesis-data-analytics-with-flink/README.md)
   * **Main Services:** Kinesis Data Streams, Kinesis Analytics
 * [AWS Hands-ON](https://aws.amazon.com/getting-started/hands-on/build-serverless-real-time-data-processing-app-lambda-kinesis-s3-dynamodb-cognito-athena/?trk=gs_card) Build a Serverless Real-Time Data Processing App
-  * **Working in Progress**
+  * [README](analytics/serveless-real-time-data-processing-app/README.md)
+  * **Main Services:** Kinesis Family, DynamoDB, S3
 * [AWS Hands-ON](https://aws.amazon.com/getting-started/hands-on/deliver-data-at-scale-to-amazon-msk-with-iot-core/?trk=gs_card) Deliver data at scale to Amazon Managed Streaming for Apache Kafka (Amazon MSK)
   * [README](analytics/deliver-data-at-scale-to-amazon-msk-with-iot-core/README.md) **Working In Progress**
+  * **Main Services:** Amazon Kafka (MSK)
 * [AWS Big Data Blog](https://aws.amazon.com/blogs/big-data/build-an-automatic-data-profiling-and-reporting-solution-with-amazon-emr-aws-glue-and-amazon-quicksight/) Build an automatic data profiling and reporting solution with Amazon EMR, AWS Glue, and Amazon QuickSight
   * **Working in Progress**
